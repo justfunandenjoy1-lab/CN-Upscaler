@@ -23,12 +23,19 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.5'
 
-      - name: Make gradlew Executable and Build Debug APK
+      - name: Generate Wrapper and Build Debug APK
         run: |
           if [ -d "CN-Upscaler-Android" ]; then
             cd CN-Upscaler-Android
           fi
+
+          if [ ! -f "gradlew" ]; then
+            gradle wrapper
+          fi
+
           chmod +x gradlew
           ./gradlew assembleDebug --stacktrace
 

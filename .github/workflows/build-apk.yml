@@ -1,0 +1,45 @@
+name: Build CN Upscaler APK
+
+on:
+workflow_dispatch:
+push:
+branches:
+- main
+
+jobs:
+build-apk:
+name: Build Android APK
+runs-on: ubuntu-latest
+
+permissions:
+  contents: read
+
+steps:
+  - name: Checkout source code
+    uses: actions/checkout@v4
+
+  - name: Set up JDK
+    uses: actions/setup-java@v4
+    with:
+      distribution: temurin
+      java-version: '17'
+      cache: gradle
+
+  - name: Set up Android SDK
+    uses: android-actions/setup-android@v3
+
+  - name: Make Gradle executable
+    run: chmod +x ./gradlew
+
+  - name: Validate Gradle wrapper
+    run: ./gradlew --version
+
+  - name: Build Debug APK
+    run: ./gradlew assembleDebug --stacktrace
+
+  - name: Upload APK
+    uses: actions/upload-artifact@v4
+    with:
+      name: CN-Upscaler-debug-apk
+      path: app/build/outputs/apk/debug/*.apk
+      if-no-files-found: error

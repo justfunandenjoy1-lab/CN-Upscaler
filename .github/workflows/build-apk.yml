@@ -24,33 +24,25 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: '8.5'
+          gradle-version: '8.9'
 
       - name: Locate Project and Build APK
         run: |
-          echo "=== Root directory contents ==="
-          ls -la
-
-          # যদি জিপ ফাইল আপলোড করা থাকে তবে তা আনজিপ করবে
           if ls *.zip 1> /dev/null 2>&1; then
-            echo "Zip file found, extracting..."
+            echo "Extracting zip file..."
             unzip -o *.zip
           fi
 
-          # settings.gradle বা build.gradle যে ফোল্ডারে আছে তা খুঁজে বের করা
           PROJECT_ROOT=$(find . -maxdepth 3 \( -name "settings.gradle*" -o -name "build.gradle*" \) -not -path "*/app/*" -printf '%h\n' | head -n 1)
 
           if [ -z "$PROJECT_ROOT" ]; then
-            echo "::error::রিপোজিটরিতে কোনো Gradle বিল্ড ফাইল পাওয়া যায়নি!"
-            echo "বর্তমান ফাইল ও ফোল্ডারের তালিকা:"
-            find . -maxdepth 3
+            echo "::error::Gradle বিল্ড ফাইল পাওয়া যায়নি!"
             exit 1
           fi
 
           echo "Found project directory: $PROJECT_ROOT"
           cd "$PROJECT_ROOT"
 
-          # gradlew ফাইল থাকলে তা ব্যবহার করবে, অন্যথায় গ্লোবাল gradle দিয়ে বিল্ড করবে
           if [ -f "gradlew" ]; then
             chmod +x gradlew
             ./gradlew assembleDebug --stacktrace

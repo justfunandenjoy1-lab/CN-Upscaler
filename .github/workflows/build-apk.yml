@@ -29,25 +29,28 @@ jobs:
       - name: Locate Project and Build APK
         run: |
           if ls *.zip 1> /dev/null 2>&1; then
-            echo "Extracting zip file..."
             unzip -o *.zip
           fi
 
           PROJECT_ROOT=$(find . -maxdepth 3 \( -name "settings.gradle*" -o -name "build.gradle*" \) -not -path "*/app/*" -printf '%h\n' | head -n 1)
-
-          if [ -z "$PROJECT_ROOT" ]; then
-            echo "::error::Gradle বিল্ড ফাইল পাওয়া যায়নি!"
-            exit 1
-          fi
-
-          echo "Found project directory: $PROJECT_ROOT"
           cd "$PROJECT_ROOT"
+          chmod +x gradlew 2>/dev/null || true
 
+          set +e
           if [ -f "gradlew" ]; then
-            chmod +x gradlew
-            ./gradlew assembleDebug --stacktrace
+            ./gradlew assembleDebug --stacktrace --no-daemon > build_log.txt 2>&1
           else
-            gradle assembleDebug --stacktrace
+            gradle assembleDebug --stacktrace --no-daemon > build_log.txt 2>&1
+          fi
+          BUILD_STATUS=$?
+
+          if [ $BUILD_STATUS -ne 0 ]; then
+            echo "## ❌ আসল কোড এরর:" >> $GITHUB_STEP_SUMMARY
+            echo '```text' >> $GITHUB_STEP_SUMMARY
+            grep -B 1 -A 5 "e: " build_log.txt >> $GITHUB_STEP_SUMMARY \vert{}\vert{} tail -n 35 build_log.txt >>$GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            cat build_log.txt
+            exit $BUILD_STATUS
           fi
 
       - name: Upload Debug APK
